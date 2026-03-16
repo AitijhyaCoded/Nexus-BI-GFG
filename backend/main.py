@@ -94,9 +94,15 @@ def init_db():
                     data JSONB,
                     insights JSONB,
                     messages JSONB,
+                    charts JSONB,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """))
+            # Add charts column if it doesn't exist (for existing databases)
+            try:
+                connection.execute(text("ALTER TABLE _nexus_analyses ADD COLUMN IF NOT EXISTS charts JSONB;"))
+            except:
+                pass
             print("Database initialized successfully.")
     except Exception as e:
         print(f"Error initializing database: {e}")
@@ -108,7 +114,7 @@ def get_cached_analysis(table_name: str, question: str):
     try:
         with engine.connect() as connection:
             query = text("""
-                SELECT sql, chart_type, summary, data, insights, messages 
+                SELECT sql, chart_type, summary, data, insights, messages, charts 
                 FROM _nexus_analyses 
                 WHERE table_name = :t AND LOWER(question) = LOWER(:q)
                 ORDER BY created_at DESC LIMIT 1
@@ -122,13 +128,14 @@ def get_cached_analysis(table_name: str, question: str):
                     "data": result[3],
                     "insights": result[4],
                     "messages": result[5],
+                    "charts": result[6],
                     "cached": True
                 }
     except Exception as e:
         print(f"Error fetching cached analysis: {e}")
     return None
 
-def save_analysis(table_name: str, question: str, sql: str, chart_type: str, summary: str, data: Any, insights: Any, messages: List[Dict]):
+def save_analysis(table_name: str, question: str, sql: str, chart_type: str, summary: str, data: Any, insights: Any, messages: List[Dict], **kwargs):
     """Saves an analysis result to the database."""
     try:
         if not table_name or not question:
@@ -137,8 +144,8 @@ def save_analysis(table_name: str, question: str, sql: str, chart_type: str, sum
 
         with engine.begin() as connection:
             query = text("""
-                INSERT INTO _nexus_analyses (table_name, question, sql, chart_type, summary, data, insights, messages)
-                VALUES (:t, :q, :s, :ct, :sm, :d, :i, :m)
+                INSERT INTO _nexus_analyses (table_name, question, sql, chart_type, summary, data, insights, messages, charts)
+                VALUES (:t, :q, :s, :ct, :sm, :d, :i, :m, :charts)
             """)
             connection.execute(query, {
                 "t": table_name,
@@ -148,9 +155,10 @@ def save_analysis(table_name: str, question: str, sql: str, chart_type: str, sum
                 "sm": summary,
                 "d": json.dumps(data) if not isinstance(data, (str, bytes)) else data,
                 "i": json.dumps(insights) if not isinstance(insights, (str, bytes)) else insights,
-                "m": json.dumps(messages) if not isinstance(messages, (str, bytes)) else messages
+                "m": json.dumps(messages) if not isinstance(messages, (str, bytes)) else messages,
+                "charts": json.dumps(kwargs.get("charts", []))
             })
-            print(f"Successfully saved analysis for table '{table_name}' and question '{question[0:50]}...'")
+            print(f"Successfully saved analysis for table '{table_name}' and question '{str(question)[0:50]}...'")
             return True
     except Exception as e:
         print(f"CRITICAL: Error saving analysis to database: {e}")
@@ -320,76 +328,88 @@ async def process_query(req: QueryRequest):
                 history_str += f"{role_name}: {msg.content}\n"
             history_str += "\n"
 
-        # 4. Ask Gemini to generate SQL and a chart type
+        # 4. Ask Gemini to generate multiple variations of SQL and chart types
         prompt = f"""
         {history_str}
         Table: '{req.table_name}'
         Columns: {schema_str}
-        Sample Data (Check for date formats like DD-MM-YYYY vs YYYY-MM-DD): {sample_data_str}
+        Sample Data: {sample_data_str}
         
         User question: "{req.query}"
         
-        Respond ONLY with a valid JSON object containing exactly three keys: 
-        1. "sql": The raw PostgreSQL query. 
-           - Match your `TO_DATE` format to the sample data provided above.
-           - If the sample shows '12-03-2023', use 'DD-MM-YYYY'.
-           - If it shows '2023-03-12', use 'YYYY-MM-DD'.
+        Act as a senior data analyst. For this user question, generate 3-5 different analytical perspectives.
+        Respond ONLY with a valid JSON object containing a "charts" key, which is an array of objects.
+        Each object in the array MUST contain:
+        1. "sql": The raw PostgreSQL query.
+           - Match your `TO_DATE` format to the sample data.
            - Use standard SQL syntax (no markdown block/formatting).
-           - If comparing multiple categories (e.g., 'Compare Sales of A and B'), PIVOT the data so each category has its own column. 
-           - Example goal for comparison: `[{{"month": "Jan", "Electronics": 100, "Fashion": 150}}, ...]`
         2. "chart_type": A recommended chart type (choose one: 'bar', 'line', 'pie', 'table', 'scatter', 'area').
-           - Use 'line' or 'bar' for comparisons over time.
-           - Use 'pie' only for single-category distributions.
-        3. "summary": A very brief (1-sentence) friendly natural language summary of what this data shows (e.g., "Here is the comparison of revenue trends between Electronics and Fashion for 2023.").
+        3. "confidence": A value from 'High', 'Medium', or 'Low'.
+        4. "rationale": A brief explanation of why this chart and SQL choice is useful for the user's query.
+        5. "summary": A very brief friendly 1-sentence summary of what this specific variation shows.
         
-        Important Data Type Instructions:
-        - If you need to filter, group, or extract time from a column that contains dates but is stored as `text` or `varchar` (like DD-MM-YYYY), use `TO_DATE(column_name, 'DD-MM-YYYY')` or `TO_DATE(column_name, 'YYYY-MM-DD')` to prevent Postgres out of range errors.
+        Important:
+        - Provide at least one 'High' confidence option that directly answers the core question.
+        - Provide other variations (Medium/Low) that explore different parameters, aggregations, or perspectives of the data.
         - Ensure columns used for Y-axis in charts are numeric.
- 
-        RULE: Bar Chart SQL Structure
-        When the user asks to compare categories using a bar chart, DO NOT use "CASE WHEN" to pivot categories into separate columns. 
-        Instead, use a standard "GROUP BY" query. 
-        The resulting SQL must return exactly two columns: one containing the Category Name (String), and one containing the Value (Number).
+        - If comparing categories, return two columns: Category Name (String) and Value (Number).
         
-        Important: Output only the raw JSON. No backticks, no markdown.
+        Output only the raw JSON. No backticks, no markdown.
         """
-        # 4. Check cache first
-        cache_key = hashlib.md5(f"{req.table_name}:{req.query}:{history_str}".encode()).hexdigest()
+        
+        # 5. Check cache first
+        cache_key = hashlib.md5(f"{req.table_name}:{req.query}:{history_str}:multi_v1".encode()).hexdigest()
         if cache_key in query_cache:
-            result_json = query_cache[cache_key]
-            sql_query = result_json.get("sql")
-            chart_type = result_json.get("chart_type", "table")
+            charts_specs = query_cache[cache_key].get("charts", [])
         else:
             response = model.generate_content(prompt)
             response_text = response.text.strip()
             
-            # Small cleanup in case Gemini returns markdown JSON blocks anyway
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            if response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
+            # Cleanup markdown
+            if response_text.startswith("```json"): response_text = response_text[7:]
+            if response_text.startswith("```"): response_text = response_text[3:]
+            if response_text.endswith("```"): response_text = response_text[:-3]
                 
             result_json = json.loads(response_text.strip())
-            sql_query = result_json.get("sql")
-            chart_type = result_json.get("chart_type", "table")
-            
-            # Save to cache
+            charts_specs = result_json.get("charts", [])
             query_cache[cache_key] = result_json
-            
-        # 5. Execute the generated SQL query
+
+        # 6. Execute all SQL queries independently
+        executed_charts = []
         with engine.connect() as connection:
-            db_result = connection.execute(text(sql_query))
-            # Convert result rows into a list of dictionaries
-            keys = db_result.keys()
-            data = [dict(zip(keys, row)) for row in db_result.fetchall()]
-            
+            for spec in charts_specs:
+                try:
+                    sql = spec.get("sql")
+                    db_result = connection.execute(text(sql))
+                    keys = db_result.keys()
+                    data = [dict(zip(keys, row)) for row in db_result.fetchall()]
+                    
+                    if data: # Only add if results are found
+                        executed_charts.append({
+                            **spec,
+                            "data": data
+                        })
+                except Exception as e:
+                    print(f"Failed to execute SQL for variant: {e}")
+                    continue # Skip failed variants
+
+        # 7. Sort executed charts: High -> Medium -> Low
+        confidence_map = {"High": 0, "Medium": 1, "Low": 2}
+        executed_charts.sort(key=lambda x: confidence_map.get(x.get("confidence", "Low"), 3))
+
+        if not executed_charts:
+            raise HTTPException(status_code=500, detail="No valid analytical visualizations could be generated.")
+
+        # Return the best chart as primary for backward compatibility, + all charts
+        best = executed_charts[0]
         return {
-            "data": data,
-            "chart_type": chart_type,
-            "summary": result_json.get("summary", ""),
-            "generated_sql": sql_query
+            "data": best["data"],
+            "chart_type": best["chart_type"],
+            "summary": best["summary"],
+            "generated_sql": best["sql"],
+            "confidence": best["confidence"],
+            "rationale": best.get("rationale", ""),
+            "charts": executed_charts # All options for the new frontend
         }
         
     except Exception as e:
@@ -478,7 +498,7 @@ async def get_analysis_detail(analysis_id: int):
     try:
         with engine.connect() as connection:
             query = text("""
-                SELECT id, table_name, question, sql, chart_type, summary, data, insights, messages, created_at
+                SELECT id, table_name, question, sql, chart_type, summary, data, insights, messages, charts, created_at
                 FROM _nexus_analyses 
                 WHERE id = :id
             """)
@@ -496,7 +516,8 @@ async def get_analysis_detail(analysis_id: int):
                 "data": row[6],
                 "insights": row[7],
                 "messages": row[8],
-                "created_at": row[9].isoformat() if row[9] else None
+                "charts": row[9],
+                "created_at": row[10].isoformat() if row[10] else None
             }
     except Exception as e:
         if isinstance(e, HTTPException): raise e
@@ -513,7 +534,8 @@ async def post_analysis(req: Dict[str, Any]):
         summary=req.get("summary", ""),
         data=req.get("data", []),
         insights=req.get("insights", {}),
-        messages=req.get("messages", [])
+        messages=req.get("messages", []),
+        charts=req.get("charts", [])
     )
     if not success:
         raise HTTPException(status_code=500, detail="Failed to save analysis to database. Check server logs.")

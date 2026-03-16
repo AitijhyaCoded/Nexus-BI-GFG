@@ -3,10 +3,20 @@ import { Sparkles, ArrowRight, Download, Share2, TrendingUp, CheckCircle2, XCirc
 import { ChartComponent } from './ChartComponent';
 import { cn } from '../utils';
 import { VoiceInput } from './VoiceInput';
+import { PerspectiveSelector } from './PerspectiveSelector';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface ChartOption {
+  sql: string;
+  chart_type: string;
+  confidence: 'High' | 'Medium' | 'Low';
+  rationale: string;
+  summary: string;
+  data: any[];
 }
 
 interface DashboardViewProps {
@@ -40,6 +50,14 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
   const [generatedSql, setGeneratedSql] = useState<string>(() => {
     return localStorage.getItem('nexus_dashboard_sql') || '';
   });
+  const [allCharts, setAllCharts] = useState<ChartOption[]>(() => {
+    const saved = localStorage.getItem('nexus_dashboard_all_charts');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [selectedChartIndex, setSelectedChartIndex] = useState<number>(() => {
+    const saved = localStorage.getItem('nexus_dashboard_selected_index');
+    return saved ? parseInt(saved, 10) : 0;
+  });
 
   // Save to localStorage when state changes
   useEffect(() => {
@@ -62,6 +80,14 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
     localStorage.setItem('nexus_dashboard_sql', generatedSql);
   }, [generatedSql]);
 
+  useEffect(() => {
+    localStorage.setItem('nexus_dashboard_all_charts', JSON.stringify(allCharts));
+  }, [allCharts]);
+
+  useEffect(() => {
+    localStorage.setItem('nexus_dashboard_selected_index', selectedChartIndex.toString());
+  }, [selectedChartIndex]);
+
   const executeQuery = async (userQuery: string, currentHistory: Message[]) => {
     setIsQuerying(true);
     setError(null);
@@ -70,6 +96,8 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
     setInsights(null);
     setChartType('table');
     setGeneratedSql('');
+    setAllCharts([]);
+    setSelectedChartIndex(0);
 
     try {
       // Fetch data
@@ -84,9 +112,22 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
         throw new Error(queryData.detail || 'Failed to fetch data');
       }
 
-      setData(queryData.data);
-      setChartType(queryData.chart_type);
       setGeneratedSql(queryData.generated_sql || '');
+      
+      const charts: ChartOption[] = queryData.charts || [];
+      setAllCharts(charts);
+      
+      // If charts are present, use the first one (highest confidence)
+      if (charts.length > 0) {
+        setData(charts[0].data);
+        setChartType(charts[0].chart_type);
+        setGeneratedSql(charts[0].sql);
+        setSelectedChartIndex(0);
+      } else {
+        setData(queryData.data);
+        setChartType(queryData.chart_type);
+        setGeneratedSql(queryData.generated_sql || '');
+      }
 
       let finalInsights = null;
 
@@ -147,7 +188,8 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
             summary: summaryText,
             data: queryData.data,
             insights: finalInsights,
-            messages: finalMessages
+            messages: finalMessages,
+            charts: charts
           })
         }).catch(e => {
           console.error("Auto-save failed:", e);
@@ -211,6 +253,23 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
             <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
               <TrendingUp className="w-2.5 h-2.5 sm:w-3 h-3" /> Live
             </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {allCharts.length > 1 && (
+              <PerspectiveSelector
+                options={allCharts}
+                selectedIndex={selectedChartIndex}
+                onSelect={(idx) => {
+                  setSelectedChartIndex(idx);
+                  const selected = allCharts[idx];
+                  setData(selected.data);
+                  setChartType(selected.chart_type);
+                  setGeneratedSql(selected.sql);
+                }}
+                label="Confidence"
+              />
+            )}
           </div>
         </header>
 
@@ -334,15 +393,29 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
                 </div>
               </div>
 
+              <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full"></div>
+                <h4 className="text-sm font-bold mb-4 flex items-center gap-2 text-white">
+                  <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                  AI Rationale
+                </h4>
+                <div className="flex gap-2.5 items-start">
+                  {allCharts[selectedChartIndex]?.rationale && <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />}
+                  <p className="text-xs sm:text-sm text-white/70 leading-relaxed italic">
+                    {isQuerying ? "..." : (allCharts[selectedChartIndex]?.rationale || "Selecting the optimal visualization for your query.")}
+                  </p>
+                </div>
+              </div>
+
               <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full"></div>
                 <h4 className="text-sm font-bold mb-4 flex items-center gap-2 text-white">
                   <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                  Predictions
+                  Insights & Predictions
                 </h4>
                 <div className="flex gap-2.5 items-start">
                   {insights?.predictions && !isQuerying && <Activity className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />}
-                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap min-h-[80px]">
+                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
                     {isQuerying ? "Generating..." : (insights?.predictions || "Awaiting trends...")}
                   </p>
                 </div>

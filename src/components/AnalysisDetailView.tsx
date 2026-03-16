@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Database, Calendar, Terminal, Download, Share2, TrendingUp, CheckCircle2, XCircle, Activity, Sparkles, FileDown, LayoutGrid, Table } from 'lucide-react';
 import { ChartComponent } from './ChartComponent';
 import { cn } from '../utils';
+import { PerspectiveSelector } from './PerspectiveSelector';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 
@@ -15,6 +16,7 @@ export function AnalysisDetailView({ analysisId, onBack }: AnalysisDetailViewPro
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
+  const [selectedChartIndex, setSelectedChartIndex] = useState(0);
   const reportRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -180,8 +182,25 @@ export function AnalysisDetailView({ analysisId, onBack }: AnalysisDetailViewPro
     return val;
   };
 
-  const { question, table_name, created_at, generated_sql, chart_type, summary } = analysis;
-  const data = parseData(analysis.data);
+  const { question, table_name, created_at } = analysis;
+  const allCharts = parseData(analysis.charts) || [];
+  
+  // Determine current active display data
+  const currentChart = allCharts.length > 0 && allCharts[selectedChartIndex] 
+    ? allCharts[selectedChartIndex] 
+    : {
+        sql: analysis.generated_sql,
+        chart_type: analysis.chart_type,
+        summary: analysis.summary,
+        data: parseData(analysis.data),
+        confidence: analysis.confidence || 'High',
+        rationale: analysis.rationale || ''
+      };
+
+  const data = currentChart.data;
+  const chart_type = currentChart.chart_type;
+  const summary = currentChart.summary;
+  const generated_sql = currentChart.sql;
   const insights = parseData(analysis.insights);
   const messages = parseData(analysis.messages);
 
@@ -208,7 +227,15 @@ export function AnalysisDetailView({ analysisId, onBack }: AnalysisDetailViewPro
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
+            {allCharts.length > 1 && (
+              <PerspectiveSelector
+                options={allCharts}
+                selectedIndex={selectedChartIndex}
+                onSelect={(idx) => setSelectedChartIndex(idx)}
+                label="Perspective"
+              />
+            )}
             <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1.5 sm:gap-2 uppercase tracking-wider">
               <TrendingUp className="w-3 sm:w-3.5 h-3 sm:h-3.5" /> Historical
             </span>
@@ -321,6 +348,17 @@ export function AnalysisDetailView({ analysisId, onBack }: AnalysisDetailViewPro
         {/* Insights Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col h-full">
+            <h4 className="text-sm font-bold mb-4 flex items-center gap-2 text-white/90">
+              <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+              AI Rationale
+            </h4>
+            <div className="flex gap-2.5 items-start mb-6">
+              <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-white/70 leading-relaxed italic">
+                {currentChart.rationale || "Selecting the optimal visualization for the query historical data."}
+              </p>
+            </div>
+            
             <h4 className="text-sm font-bold mb-6 flex items-center gap-2 text-white/90">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
               Insights
