@@ -202,23 +202,23 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
   }
 
   return (
-    <div className="flex-1 flex overflow-hidden h-full bg-[#0a0c10]">
+    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full bg-[#0a0c10]">
       {/* Left Pane: Analysis Results */}
-      <div className="flex-1 overflow-y-auto w-full border-r border-white/5 custom-scrollbar">
-        <header className="sticky top-0 z-30 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-white tracking-tight">Analysis Pane</h2>
-            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
-              <TrendingUp className="w-3 h-3" /> Live
+      <div className="flex-1 overflow-y-auto w-full lg:border-r border-white/5 custom-scrollbar order-2 lg:order-1">
+        <header className="sticky top-0 z-30 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Analysis Pane</h2>
+            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 h-3" /> Live
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 text-white/40 hover:text-white transition-colors"><Download size={18} /></button>
-            <button className="p-2 text-white/40 hover:text-white transition-colors"><Share2 size={18} /></button>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button className="p-1.5 sm:p-2 text-white/40 hover:text-white transition-colors"><Download size={16} /></button>
+            <button className="p-1.5 sm:p-2 text-white/40 hover:text-white transition-colors"><Share2 size={16} /></button>
           </div>
         </header>
 
-        <div className="p-6 space-y-6 max-w-5xl mx-auto">
+        <div className="p-4 sm:p-6 space-y-6 max-w-5xl mx-auto">
           {error && (
             <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400 text-sm flex items-center gap-3">
               <Info className="shrink-0" size={18} />
@@ -243,7 +243,7 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
             )}
 
             {/* Main Chart */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-6 shadow-2xl min-h-[450px] flex flex-col relative overflow-hidden">
+            <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl min-h-[350px] sm:min-h-[450px] flex flex-col relative overflow-hidden">
               {isQuerying && (
                 <div className="absolute inset-0 bg-[#0a0c10]/40 backdrop-blur-[2px] z-20 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
@@ -252,14 +252,14 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
                   </div>
                 </div>
               )}
-              <div className="flex justify-between items-start mb-8">
+              <div className="flex justify-between items-start mb-6 sm:mb-8">
                 <div>
-                  <h3 className="font-bold text-lg text-white tracking-tight capitalize">{chartType} Visualization</h3>
-                  <p className="text-sm text-white/40 mt-1">Data insights based on conversation</p>
+                  <h3 className="font-bold text-base sm:text-lg text-white tracking-tight capitalize">{chartType} Visualization</h3>
+                  <p className="text-xs sm:text-sm text-white/40 mt-1">Data insights based on conversation</p>
                 </div>
               </div>
 
-              <div className="flex-1 w-full">
+              <div className="flex-1 w-full min-h-[300px]">
                 {data && data.length > 0 ? (
                   <ChartComponent type={chartType} data={data} />
                 ) : (
@@ -357,15 +357,15 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
           {/* Data Table */}
           <section className="bg-white/[0.02] border border-white/10 rounded-2xl shadow-2xl overflow-hidden mb-8">
             <div className="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-              <h3 className="font-bold text-sm text-white/60 uppercase tracking-widest">Query Results (Top 50)</h3>
+              <h3 className="font-bold text-xs text-white/60 uppercase tracking-widest">Query Results (Top 50)</h3>
             </div>
             <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
               {data && data.length > 0 ? (
-                <table className="w-full text-left border-collapse min-w-[600px]">
+                <table className="w-full text-left border-collapse min-w-[500px] sm:min-w-[600px]">
                   <thead className="sticky top-0 bg-[#0f1117]/90 backdrop-blur shadow-sm z-10">
                     <tr>
                       {Object.keys(data[0]).map((key) => (
-                        <th key={key} className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+                        <th key={key} className="px-4 sm:px-6 py-3 sm:py-4 text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
                           {key}
                         </th>
                       ))}
@@ -375,7 +375,7 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
                     {data.slice(0, 50).map((row, idx) => (
                       <tr key={idx} className="hover:bg-white/[0.01] transition-colors">
                         {Object.values(row).map((val: any, jdx) => (
-                          <td key={jdx} className="px-6 py-3.5 text-xs text-white/60">
+                          <td key={jdx} className="px-4 sm:px-6 py-3 sm:py-3.5 text-[11px] sm:text-xs text-white/60">
                             {typeof val === 'number' ? val.toLocaleString() : String(val)}
                           </td>
                         ))}
@@ -392,8 +392,8 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
       </div>
 
       {/* Right Pane: Chat Interface */}
-      <div className="w-[400px] flex flex-col bg-white/[0.01] border-l border-white/5">
-        <div className="p-6 border-b border-white/5">
+      <div className="w-full lg:w-[350px] xl:w-[400px] flex flex-col bg-white/[0.01] border-l border-white/5 h-[400px] lg:h-full order-1 lg:order-2">
+        <div className="p-4 sm:p-6 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">
               <Sparkles size={16} />
@@ -406,27 +406,27 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
           {messages.map((msg, idx) => (
             <div key={idx} className={cn(
-              "flex flex-col max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-300",
+              "flex flex-col max-w-[90%] sm:max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-300",
               msg.role === 'user' ? "ml-auto items-end" : "mr-auto items-start"
             )}>
               <div className={cn(
-                "px-4 py-3 rounded-2xl text-sm leading-relaxed",
+                "px-3 sm:px-4 py-2 sm:py-3 rounded-2xl text-xs sm:text-sm leading-relaxed",
                 msg.role === 'user'
                   ? "bg-indigo-600 text-white rounded-tr-none"
                   : "bg-white/5 border border-white/10 text-white/80 rounded-tl-none"
               )}>
                 {msg.content}
               </div>
-              <span className="text-[10px] text-white/20 mt-1 uppercase font-bold tracking-tighter">
+              <span className="text-[9px] sm:text-[10px] text-white/20 mt-1 uppercase font-bold tracking-tighter">
                 {msg.role === 'user' ? 'You' : 'Assistant'}
               </span>
             </div>
           ))}
           {isQuerying && (
-            <div className="flex gap-2 items-center text-white/40 text-[10px] font-bold animate-pulse">
+            <div className="flex gap-2 items-center text-white/40 text-[9px] sm:text-[10px] font-bold animate-pulse">
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
@@ -436,7 +436,7 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-black/20 border-t border-white/5">
+        <div className="p-3 sm:p-4 bg-black/20 border-t border-white/5">
           <form onSubmit={handleSendMessage} className="relative">
             <input
               type="text"
@@ -444,20 +444,20 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
               onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask a follow-up question..."
               disabled={isQuerying}
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-20 text-sm text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
+              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 sm:py-3 pl-4 pr-16 sm:pr-20 text-xs sm:text-sm text-white placeholder:text-white/20 outline-none focus:ring-1 focus:ring-indigo-500 transition-all disabled:opacity-50"
             />
-            <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center">
+            <div className="absolute right-9 sm:right-10 top-1/2 -translate-y-1/2 flex items-center">
               <VoiceInput onResult={(text) => setChatInput(text)} />
             </div>
             <button
               type="submit"
               disabled={isQuerying || !chatInput.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white hover:bg-indigo-500 transition-colors disabled:opacity-30 disabled:scale-95"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white hover:bg-indigo-500 transition-colors disabled:opacity-30 disabled:scale-95"
             >
-              <ArrowRight size={18} />
+              <ArrowRight size={16} />
             </button>
           </form>
-          <p className="text-[9px] text-white/20 text-center mt-3 uppercase font-bold tracking-widest">Powered by Gemini 2.5 Flash</p>
+          <p className="text-[8px] sm:text-[9px] text-white/20 text-center mt-2 sm:mt-3 uppercase font-bold tracking-widest">Powered by Gemini 2.5 Flash</p>
         </div>
       </div>
     </div>

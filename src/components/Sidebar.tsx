@@ -24,23 +24,27 @@ export function Sidebar({ isCollapsed, setIsCollapsed, activeView, setActiveView
         isCollapsed ? "w-20" : "w-64"
       )}
     >
-      <div className="p-6 flex items-center gap-3 h-24 relative overflow-hidden">
+      <div className="p-6 flex items-center justify-between h-24 relative overflow-hidden">
         {/* Purple Radial Blur Background */}
         <div className="absolute top-1/2 left-8 -translate-y-1/2 w-16 h-16 bg-purple-600/30 blur-2xl rounded-full"></div>
         
-        <div className="relative flex items-center justify-center shrink-0">
-          {/* The glowing purple background layer */}
-          <div className="absolute w-8 h-8 bg-purple-800 rounded-full blur-md opacity-75"></div>
-          
-          {/* Your sharp logo on top */}
-          <img src="/logo.png" alt="Nexus BI Logo" className="relative z-10 w-10 h-10 object-contain" />
-        </div>
-        {!isCollapsed && (
-          <div className="overflow-hidden whitespace-nowrap relative z-10">
-            <h1 className="font-bold text-xl leading-none text-white tracking-tight">Nexus <span className="text-indigo-400">BI</span></h1>
-            <p className="text-[10px] text-white/50 font-semibold uppercase tracking-[0.2em] mt-1.5">Intelligence</p>
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="relative flex items-center justify-center shrink-0">
+            {/* The glowing purple background layer */}
+            <div className="absolute w-8 h-8 bg-purple-800 rounded-full blur-md opacity-75"></div>
+            
+            {/* Your sharp logo on top */}
+            <img src="/logo.png" alt="Nexus BI Logo" className="relative z-10 w-10 h-10 object-contain" />
           </div>
-        )}
+          {!isCollapsed && (
+            <div className="overflow-hidden whitespace-nowrap">
+              <h1 className="font-bold text-xl leading-none text-white tracking-tight">Nexus <span className="text-indigo-400">BI</span></h1>
+              <p className="text-[10px] text-white/50 font-semibold uppercase tracking-[0.2em] mt-1.5">Intelligence</p>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Close Button would be handled by overlay in App.tsx or we can add one here if needed */}
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -87,7 +91,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, activeView, setActiveView
 
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 bg-[#1a1c23] border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors z-50"
+        className="hidden md:flex absolute -right-3 top-20 w-6 h-6 bg-[#1a1c23] border border-white/10 rounded-full items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors z-50"
       >
         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
