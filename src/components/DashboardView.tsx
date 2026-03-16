@@ -212,9 +212,9 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
               <TrendingUp className="w-2.5 h-2.5 sm:w-3 h-3" /> Live
             </span>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button className="p-1.5 sm:p-2 text-white/40 hover:text-white transition-colors"><Download size={16} /></button>
-            <button className="p-1.5 sm:p-2 text-white/40 hover:text-white transition-colors"><Share2 size={16} /></button>
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-white/40 hover:text-white transition-colors"><Download size={18} /></button>
+            <button className="p-2 text-white/40 hover:text-white transition-colors"><Share2 size={18} /></button>
           </div>
         </header>
 
