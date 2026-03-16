@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Recharts Brush Styling */
+.recharts-brush-slide {
+  fill: rgba(79, 70, 229, 0.1) !important;
+}
+
+.recharts-brush-traveller rect {
+  fill: #4f46e5 !important;
+  stroke: none !important;
+}
+
+.recharts-brush rect {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
+
+.recharts-brush-texts {
+  fill: rgba(255, 255, 255, 0.4) !important;
+  font-size: 10px !important;
+  font-weight: bold !important;
+}
