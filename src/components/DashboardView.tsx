@@ -244,9 +244,17 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full bg-[#0a0c10]">
+    <div className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full bg-[#0a0c10] relative">
+      {/* Background Blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="bg-blob w-[50%] h-[50%] bg-indigo-600/60 top-[-15%] left-[-15%] slide-in-from-top-10 duration-1000" />
+        <div className="bg-blob w-[60%] h-[60%] bg-purple-600/60 bottom-[-15%] right-[-15%] [animation-delay:2s]" />
+        <div className="bg-blob w-[40%] h-[40%] bg-fuchsia-600/60 top-[15%] right-[5%] [animation-delay:4s]" />
+        <div className="bg-blob w-[45%] h-[45%] bg-indigo-500/60 bottom-[5%] left-[10%] [animation-delay:6s]" />
+      </div>
+
       {/* Left Pane: Analysis Results */}
-      <div className="flex-1 overflow-y-auto w-full lg:border-r border-white/5 custom-scrollbar order-2 lg:order-1">
+      <div className="flex-1 overflow-y-auto w-full lg:border-r border-white/5 custom-scrollbar order-2 lg:order-1 relative z-10">
         <header className="sticky top-0 z-30 bg-[#0a0c10]/80 backdrop-blur-xl border-b border-white/5 px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Analysis Pane</h2>
@@ -461,7 +469,7 @@ export function DashboardView({ query, tableName }: DashboardViewProps) {
       </div>
 
       {/* Right Pane: Chat Interface */}
-      <div className="w-full lg:w-[350px] xl:w-[400px] flex flex-col bg-white/[0.01] border-l border-white/5 h-[400px] lg:h-full order-1 lg:order-2">
+      <div className="w-full lg:w-[350px] xl:w-[400px] flex flex-col bg-white/[0.01] border-l border-white/5 h-[400px] lg:h-full order-1 lg:order-2 relative z-10">
         <div className="p-4 sm:p-6 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400">

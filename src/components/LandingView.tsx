@@ -117,9 +117,9 @@ export function LandingView({ onAnalyze, activeTable, setActiveTable }: LandingV
         </div>
 
         {/* Breathing Background Blurs */}
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
-        <div className="absolute bottom-[10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/10 blur-[150px] rounded-full animate-pulse-slow-reverse"></div>
-        <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-pink-600/5 blur-[100px] rounded-full animate-pulse-slow" style={{ animationDelay: '-2s' }}></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[10%] right-[-10%] w-[60%] h-[60%] bg-purple-600/20 blur-[150px] rounded-full animate-pulse-slow-reverse"></div>
+        <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-pink-600/10 blur-[100px] rounded-full animate-pulse-slow" style={{ animationDelay: '-2s' }}></div>
       </div>
 
       <style>{`
