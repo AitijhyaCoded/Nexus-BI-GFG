@@ -26,7 +26,7 @@ export function LandingView({ onAnalyze, activeTable, setActiveTable }: LandingV
 
   // Fetch preview data automatically when activeTable changes
   React.useEffect(() => {
-    if (!activeTable || activeTable === 'default_table') return;
+    if (!activeTable || activeTable === 'none') return;
     
     // Only fetch if it's a different table than what we already have
     if (previewData?.tableName === activeTable) return;
