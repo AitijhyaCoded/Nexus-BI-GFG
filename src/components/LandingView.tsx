@@ -212,7 +212,7 @@ export function LandingView({ onAnalyze, activeTable, setActiveTable }: LandingV
             <h3 className="text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Currently Connected</h3>
             <div className="bg-emerald-500/5 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl border border-emerald-500/10 mb-2 max-w-full">
               <p className="text-white font-mono text-xs sm:text-sm break-all font-bold tracking-tight">
-                {activeTable || 'nexus_bi_default'}
+                {activeTable || 'none'}
               </p>
             </div>
             <p className="text-[9px] sm:text-[10px] text-emerald-400/60 font-medium uppercase tracking-widest">Active Table ready for analysis</p>
